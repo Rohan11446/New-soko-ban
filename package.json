@@ -14,5 +14,13 @@
   },
   "engines": {
     "node": ">=18.0.0"
-  }
+  },
+  "keywords": [
+    "sokoban",
+    "level-generator",
+    "csv",
+    "api"
+  ],
+  "author": "Your Name",
+  "license": "MIT"
 }
