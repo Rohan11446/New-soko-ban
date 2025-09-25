@@ -1,24 +1,24 @@
 import express from "express";
 import cors from "cors";
-import generate from "./sokobanLib.js";
+import generate from "sokoban-generator";
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.use(cors());
 
-// Map classic symbols to your custom legend
+// Mapping function to your custom symbols
 function mapToCustomLegend(levelString) {
   return levelString
-    .replace(/@/g, "웃")   // Player
-    .replace(/\+/g, "(웃)") // Player on endzone
-    .replace(/#/g, "#")    // Wall
-    .replace(/\$/g, "▩")   // Box
-    .replace(/\*/g, "◙")   // Box in endzone
-    .replace(/\./g, "O");  // Endzone
+    .replace(/@/g, "웃")
+    .replace(/\+/g, "(웃)")
+    .replace(/#/g, "#")
+    .replace(/\$/g, "▩")
+    .replace(/\*/g, "◙")
+    .replace(/\./g, "O");
 }
 
-// Convert level string to CSV
+// Convert mapped level string to CSV format
 function convertToCSV(levelString) {
   return levelString
     .split("\n")
@@ -35,7 +35,7 @@ app.get("/", (req, res) => {
   });
 });
 
-// Generate endpoint
+// Generate endpoint via GET with query parameters
 app.get("/generate", (req, res) => {
   const width = parseInt(req.query.width) || 7;
   const height = parseInt(req.query.height) || 7;
@@ -43,7 +43,7 @@ app.get("/generate", (req, res) => {
   const minWalls = parseInt(req.query.minWalls) || 5;
   const attempts = parseInt(req.query.attempts) || 1000;
   const seed = parseInt(req.query.seed) || Date.now();
-  const type = "string";
+  const type = "string"; // always string for CSV output
 
   try {
     const level = generate({ width, height, boxes, minWalls, attempts, seed, type });
@@ -60,7 +60,6 @@ app.get("/generate", (req, res) => {
     res.setHeader("Content-Disposition", "attachment; filename=sokoban_level.csv");
     res.setHeader("Content-Type", "text/csv");
     res.send(csvContent);
-
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Internal error" });
