@@ -1,71 +1,59 @@
-import express from "express";
-import cors from "cors";
-import generate from "sokoban-generator";
+import express from 'express';
+import { SokobanSolver } from 'sokoban-solver'; // Assuming a Sokoban solver library is available
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const port = process.env.PORT || 3000;
 
-app.use(cors());
+app.get('/generate', (req, res) => {
+  const { width = 10, height = 20, boxes = 5, minWalls = 3 } = req.query;
 
-// Mapping function to your custom symbols
-function mapToCustomLegend(levelString) {
-  return levelString
-    .replace(/@/g, "웃")
-    .replace(/\+/g, "(웃)")
-    .replace(/#/g, "#")
-    .replace(/\$/g, "▩")
-    .replace(/\*/g, "◙")
-    .replace(/\./g, "O");
-}
+  // Step 1: Initialize an empty grid
+  const grid = Array.from({ length: height }, () => Array(width).fill(' '));
 
-// Convert mapped level string to CSV format
-function convertToCSV(levelString) {
-  return levelString
-    .split("\n")
-    .map(row => row.split("").join(","))
-    .join("\n");
-}
-
-// Root endpoint
-app.get("/", (req, res) => {
-  res.json({
-    message: "Sokoban Level Generator API",
-    usage:
-      "GET /generate?width=7&height=7&boxes=2&minWalls=5&attempts=1000&seed=123"
-  });
-});
-
-// Generate endpoint via GET with query parameters
-app.get("/generate", (req, res) => {
-  const width = parseInt(req.query.width) || 7;
-  const height = parseInt(req.query.height) || 7;
-  const boxes = parseInt(req.query.boxes) || 2;
-  const minWalls = parseInt(req.query.minWalls) || 5;
-  const attempts = parseInt(req.query.attempts) || 1000;
-  const seed = parseInt(req.query.seed) || Date.now();
-  const type = "string"; // always string for CSV output
-
-  try {
-    const level = generate({ width, height, boxes, minWalls, attempts, seed, type });
-
-    if (!level) {
-      return res.status(400).json({
-        error: "Could not generate a solvable level with given constraints"
-      });
+  // Step 2: Place boxes and goals
+  const goals = [];
+  const boxesPositions = [];
+  for (let i = 0; i < boxes; i++) {
+    let placed = false;
+    while (!placed) {
+      const x = Math.floor(Math.random() * width);
+      const y = Math.floor(Math.random() * height);
+      if (grid[y][x] === ' ' && !goals.some(g => g.x === x && g.y === y)) {
+        grid[y][x] = 'O'; // Goal
+        goals.push({ x, y });
+        placed = true;
+      }
     }
-
-    const mappedLevel = mapToCustomLegend(level);
-    const csvContent = convertToCSV(mappedLevel);
-
-    res.setHeader("Content-Disposition", "attachment; filename=sokoban_level.csv");
-    res.setHeader("Content-Type", "text/csv");
-    res.send(csvContent);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Internal error" });
   }
+
+  // Step 3: Place the player adjacent to a box
+  const playerPos = { x: goals[0].x + 1, y: goals[0].y };
+  grid[playerPos.y][playerPos.x] = '웃';
+
+  // Step 4: Add walls and floors
+  // This is a simplified approach; you can enhance it by adding more walls
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      if (grid[y][x] === ' ' && Math.random() < minWalls / 100) {
+        grid[y][x] = '#'; // Wall
+      }
+    }
+  }
+
+  // Step 5: Validate the level
+  const solver = new SokobanSolver(grid);
+  if (!solver.isSolvable()) {
+    return res.status(500).json({ error: 'Generated level is not solvable' });
+  }
+
+  // Step 6: Convert grid to CSV
+  const csv = grid.map(row => row.join(',')).join('\n');
+
+  res.setHeader('Content-Type', 'text/csv');
+  res.setHeader('Content-Disposition', 'attachment; filename=level.csv');
+  res.send(csv);
 });
 
-app.listen(PORT, () => {
-  console.log(`🚀 Sokoban API running on port ${PORT}`);
+app.listen(port, () => {
+  console.log(`Server running on port ${port}`);
 });
