@@ -1,0 +1,26 @@
+{
+  "name": "sokoban-api",
+  "version": "1.0.0",
+  "description": "Sokoban Level Generator API with custom symbols and CSV output",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "sokoban-generator": "^1.1.5"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "keywords": [
+    "sokoban",
+    "level-generator",
+    "csv",
+    "api"
+  ],
+  "author": "Your Name",
+  "license": "MIT"
+}
